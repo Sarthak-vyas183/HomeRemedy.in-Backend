@@ -20,12 +20,14 @@ import videoRouter from "./routes/videoRouter.js"
 import commentRouter from "./routes/commentRouter.js"
 import LikeRouter from "./routes/likeRoute.js";
 import healthcheckRouter from "./routes/healthcheckRouter.js"
+import remedyRouter from "./routes/RemedyRouter.js"
 
 app.use("/api/v1/user", userRouter)
 app.use("/api/v1/videos", videoRouter)
 app.use("/api/v1/comment", commentRouter);
 app.use("/api/v1/like", LikeRouter);
 app.use("/api/v1/healthCheck", healthcheckRouter)
+app.use("/api/v1/remedy", remedyRouter);
 
 
 export { app }
