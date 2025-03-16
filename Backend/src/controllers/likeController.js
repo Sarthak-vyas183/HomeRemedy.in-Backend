@@ -4,38 +4,41 @@ import { ApiError } from "../utils/Apierror.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import videoModel from "../models/videoModel.js";
+import { remedyModel } from "../models/remedyModel.js";
 import commentModel from "../models/commentModel.js";
-import { tweetModel } from "../models/tweetModel.js";
 
-const toggleVideoLike = asyncHandler(async (req, res) => {
+const toggleProductLike = asyncHandler(async (req, res) => {
   try {
-    const { videoId } = req.params;
-    if (!isValidObjectId(videoId)) throw new ApiError(400, "Invalid videoId");
-    const Likedvideo = await videoModel.findById(videoId);
+    const { productId } = req.params;
+    if (!isValidObjectId(productId)) throw new ApiError(400, "Invalid productId");
 
-    if (!Likedvideo) {
-      throw new ApiError(404, "Video not found : video source not found");
+    // Search for the product in both videoModel and remedyModel
+    let LikedProduct = await remedyModel.findById(productId);
+
+    if (!LikedProduct) {
+        throw new ApiError(404, "Product not found in both models");
     }
 
     const Alreadyliked = await LikeModel.findOne({
-      video: Likedvideo?._id,
+      productId: LikedProduct?._id,
       likedBy: req.user?._id,
     });
 
     if (Alreadyliked) {
       await Alreadyliked.deleteOne();
-      return res.status(200).json(new ApiResponse(200, Alreadyliked, "Unlike successfully"))
+      return res.status(200).json(new ApiResponse(200, Alreadyliked, "Unlike successfully"));
     }
 
     const likeDocument = await LikeModel.create({
-      video: Likedvideo?._id,
+      productId: LikedProduct?._id,
       likedBy: req.user?._id,
+      liked: true // Ensure the liked field is set to true
     });
 
-    if (!likeDocument) throw new ApiError(400, "Failed to like the video");
+    if (!likeDocument) throw new ApiError(400, "Failed to like the product");
     return res
       .status(200)
-      .json(new ApiResponse(200, likeDocument, "video Liked Successfully"));
+      .json(new ApiResponse(200, likeDocument, "Product Liked Successfully"));
   } catch (error) {
     res.status(500).send(`Internal Server Error : ${error}`);
   }
@@ -62,6 +65,7 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
     const likeDocument = await LikeModel.create({
       comment: LikedComment?._id,
       likedBy: req.user?._id,
+      liked: true, // Ensure the liked field is set to true
     });
     if (!likeDocument) throw new ApiError(400, "Failed to like the comment");
     return res
@@ -72,38 +76,44 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
   }
 });
 
-const toggleTweetLike = asyncHandler(async (req, res) => {
+const toggleVideoLike = asyncHandler(async (req, res) => {
   try {
-    const { tweetId } = req.params;
-    if (!isValidObjectId(tweetId)) throw new ApiError(400, "Invalid commentId");
-    const LikedTweet = await tweetModel.findById(tweetId);
-    if (!LikedTweet)
-      throw new ApiError(404, "tweet not found : tweet source not found");
+    const { videoId } = req.params;
+    if (!isValidObjectId(videoId)) throw new ApiError(400, "Invalid productId");
+
+    // Search for the product in both videoModel and remedyModel
+    let LikedVideo = await remedyModel.findById(videoId);
+
+    if (!LikedVideo) {
+        throw new ApiError(404, "Product not found in videoModel");
+    }
 
     const Alreadyliked = await LikeModel.findOne({
-      tweet: LikedTweet?._id,
+      videoId: LikedVideo?._id,
       likedBy: req.user?._id,
     });
 
     if (Alreadyliked) {
       await Alreadyliked.deleteOne();
-      return res.status(200).json(new ApiResponse(200, Alreadyliked, "Unlike successfully"))
+      return res.status(200).json(new ApiResponse(200, Alreadyliked, "Unlike successfully"));
     }
 
     const likeDocument = await LikeModel.create({
-      tweet: LikedTweet?._id,
+      videoId: LikedVideo?._id,
       likedBy: req.user?._id,
+      liked: true
     });
-    if (!likeDocument) throw new ApiError(400, "Failed to like the comment");
+
+    if (!likeDocument) throw new ApiError(400, "Failed to like the product");
     return res
       .status(200)
-      .json(new ApiResponse(200, likeDocument, "Tweet Liked Successfully"));
+      .json(new ApiResponse(200, likeDocument, "Product Liked Successfully"));
   } catch (error) {
     res.status(500).send(`Internal Server Error : ${error}`);
   }
 });
 
-const getLikedVideos = asyncHandler(async (req, res) => {
+const getLikedProduct = asyncHandler(async (req, res) => {
   try {
     const userId = req.user?._id;
     if (!isValidObjectId(userId)) throw new ApiError(400, "unauthorized user");
@@ -119,6 +129,4 @@ const getLikedVideos = asyncHandler(async (req, res) => {
   }
 });
 
-
-
-export { toggleCommentLike, toggleTweetLike, toggleVideoLike, getLikedVideos };
+export { toggleCommentLike, toggleProductLike, getLikedProduct, toggleVideoLike };

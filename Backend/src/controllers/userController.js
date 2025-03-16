@@ -34,13 +34,13 @@ const registerUser = asyncHandler(async (req, res) => {
   //remove password and refresh token field from the response
   //check user creation
   // send response
-  const { email, fullName, password, username } = req.body;
+  const { email, fullName, password, username, ph_no } = req.body;
   if (
-    [email, fullName, password, username].some(
+    [email, fullName, password, username, ph_no].some(
       (fields) => fields?.trim() === ""
     )
   ) {
-    throw new ApiError(400, "All fields are require");
+    throw new ApiError(400, "All fields are required");
   }
 
   const existUser = await userModel.findOne({
@@ -48,7 +48,7 @@ const registerUser = asyncHandler(async (req, res) => {
   });
 
   if (existUser) {
-    throw new ApiError(409, "username and with  user already exist");
+    throw new ApiError(409, "username and with user already exist");
   }
 
   const avatarLocalPath = req.files?.avatar[0]?.path;
@@ -64,7 +64,7 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   if (!avatarLocalPath) {
-    throw new ApiError(400, "Avatar file require");
+    throw new ApiError(400, "Avatar file required");
   }
   const avatar = await uploadOnCloudinary(avatarLocalPath);
   const coverImage = await uploadOnCloudinary(coverImageLocalPath);
@@ -78,6 +78,7 @@ const registerUser = asyncHandler(async (req, res) => {
     email,
     password,
     username,
+    ph_no, // Ensure ph_no is included here
     avatar: avatar.url,
     coverImage: coverImage?.url || "",
   });
@@ -86,9 +87,8 @@ const registerUser = asyncHandler(async (req, res) => {
     .select("-password -refreshToken");
 
   if (!createdUser) {
-    throw new ApiError(500, "something went wrong while registring user");
-  } 
-  
+    throw new ApiError(500, "something went wrong while registering user");
+  }
 
   const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(
     createdUser._id
@@ -111,7 +111,8 @@ const registerUser = asyncHandler(async (req, res) => {
         },
         "Registration success"
       )
-);});
+    );
+});
 
 const loginUser = asyncHandler(async (req, res) => {
   // req body -> data
@@ -143,8 +144,8 @@ const loginUser = asyncHandler(async (req, res) => {
 
   const isPasswordValid = await user.isPasswordCorrect(password);
 
-  if(!isPasswordValid) {
-    return res.status(400).send("Invalid credentials")
+  if (!isPasswordValid) {
+    return res.status(400).send("Invalid credentials");
   }
 
   const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(
@@ -282,8 +283,8 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 
 const updateAccountDetail = asyncHandler(async (req, res) => {
   try {
-    const { username, fullName, email } = req.body;
-    if ([username, fullName, email].some((field) => field?.trim() === "")) {
+    const { username, fullName, email, ph_no, bio, location, preferredLanguage } = req.body;
+    if ([username, fullName, email,  ph_no].some((field) => field?.trim() === "")) {
       return new ApiError(
         401,
         "email , fullName , and email all fields are require"
@@ -297,6 +298,10 @@ const updateAccountDetail = asyncHandler(async (req, res) => {
             fullName,
             email,
             username,
+            ph_no,
+            bio,
+            location,
+            preferredLanguage,
           },
         },
         { new: true }
@@ -327,7 +332,7 @@ const updateAvatar = asyncHandler(async (req, res) => {
         {
           $set: {
             avatar: avatar.url,
-          }, 
+          },
         },
         { new: true }
       )
@@ -345,7 +350,8 @@ const coverImageUpdate = asyncHandler(async (req, res) => {
   try {
     //uplading file from local to clodinary and get URL
     const coverImageLocalPath = req.file?.path;
-    if (!coverImageLocalPath) return new ApiError(401, "coverImage file missing");
+    if (!coverImageLocalPath)
+      return new ApiError(401, "coverImage file missing");
     const coverImage = await uploadOnCloudinary(coverImageLocalPath);
     if (!coverImage.url)
       return new ApiError(401, "Error while uploading Avatar on cludinary");
@@ -363,7 +369,8 @@ const coverImageUpdate = asyncHandler(async (req, res) => {
         { new: true }
       )
       .select("-password -refreshToken");
-    if (!user) return new ApiError(501, "coverImage updation in database failed !");
+    if (!user)
+      return new ApiError(501, "coverImage updation in database failed !");
     res
       .status(200)
       .json(new ApiResponse(200, user, "coverImage upadated successfully"));
@@ -372,157 +379,78 @@ const coverImageUpdate = asyncHandler(async (req, res) => {
   }
 });
 
-const userChannelProfile = asyncHandler(async(req , res)=> {
-   try {
-     const {username}  = req.params;
-     if(!username?.trim()) return new ApiError(400 , "username missing");
-    const channel = await userModel.aggregate([ 
-     { 
-           $match : {
-             username : username
-           }
-     },
-           {
-             $lookup : {
-               from : "subscriptions",
-               localField : "_id",
-               foreignField : "channel",
-               as : "subscribers"
-             }
-           } ,
- 
-           {
-            $lookup : {
-                from : "subscriptions",
-                localField : "_id",
-                foreignField : "subscriber",
-                as : "subscribedTo"
-            } 
-           },
-       
-           {
-             $addFields : {
-               subscriberCount : {
-                  $size : "$subscribers"
-               },
-               subscribedToCount : {
-                 $size : "$subscribedTo"
-               },
-
-               isSubscribed : {
-                $cond : {
-                  if : {$in : [req.user?._id , "$subscribers.subscriber"]},
-                  then : true,
-                  else : false
-                }
-            }
-
-             },
- 
-             
-           },  
- 
- 
-           {
-             $project : {
-               fullName : 1,
-               email : 1,
-               username : 1,
-               avatar : 1,
-               coverImage : 1,
-               subscriberCount : 1,
-               subscribedToCount : 1,
-               isSubscribed : 1,
-             }
-           }
-     ]) 
-     if(!channel?.length) {
-      res.status(404).json({msg : "channel does not found"})
-     } 
-     
-     return res.status(200)
-               .json(
-                  new ApiResponse(200, channel[0], "User Channel found")
-               )   
- 
-   } catch (error) {
-    res.send(`Internal server Error : ${error}`)
-   }
-})
-
-const getWatchHistory = asyncHandler(async(req , res) => {
-    try {
-       const user = await userModel.aggregate([
+const getWatchHistory = asyncHandler(async (req, res) => {
+  try {
+    const user = await userModel.aggregate([
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(req.user._id),
+        },
+      },
+      {
+        $lookup: {
+          from: "videos",
+          localField: "watchHistory",
+          foreignField: "_id",
+          as: "watchHistory",
+          pipeline: [
             {
-              $match : {
-                 _id : new mongoose.Types.ObjectId(req.user._id)
-              }
+              $lookup: {
+                from: "users",
+                localField: "owner",
+                foreignField: "_id",
+                as: "owner",
+                pipeline: [
+                  {
+                    $project: {
+                      fullName: 1,
+                      email: 1,
+                      username: 1,
+                      avatar: 1,
+                      coverImage: 1,
+                    },
+                  },
+                ],
+              },
             },
-             {
-               $lookup : {
-                 from : "videos",
-                 localField : "watchHistory",
-                 foreignField : "_id",
-                 as : "watchHistory",
-                 pipeline : [
-                      {
-                        $lookup : {
-                          from : "users",
-                          localField : "owner",
-                          foreignField : "_id",
-                          as : "owner",
-                          pipeline : [
-                            {
-                               $project : {
-                                fullName : 1,
-                                email : 1,
-                                username : 1,
-                                avatar : 1,
-                                coverImage : 1,
-  
-                               }
-                            }
-                          ]
-                        } 
-                      } , 
-  
-                     {
-                      $addFields : {
-                        owner : {
-                            $first : "$owner"
-                        }
-                      }
-                     }
-                 ]
-               }
-  
-             }
-       ]);
-  
-       if(!user) { 
-         throw new ApiError(404 , "user not found in watch history")
-       }
-  
-       return res
-       .status(200)
-       .json(
-           new ApiResponse(
-               200,
-               user[0].watchHistory,
-               "Watch history fetched successfully"
-           )
-       )    } catch (error) {
-      res.send(`Internal server error : ${error}`)
-    }
-})
 
-const SendLoggedUserData = asyncHandler(async(req, res)=> {
-   try {
-     res.send(req.user)
-   } catch (error) {
-    res.status(404).send(error)
-   }
-})
+            {
+              $addFields: {
+                owner: {
+                  $first: "$owner",
+                },
+              },
+            },
+          ],
+        },
+      },
+    ]);
+
+    if (!user) {
+      throw new ApiError(404, "user not found in watch history");
+    }
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          user[0].watchHistory,
+          "Watch history fetched successfully"
+        )
+      );
+  } catch (error) {
+    res.send(`Internal server error : ${error}`);
+  }
+});
+
+const SendLoggedUserData = asyncHandler(async (req, res) => {
+  try {
+    res.send(req.user);
+  } catch (error) {
+    res.status(404).send(error);
+  }
+});
 
 export {
   registerUser,
@@ -534,7 +462,6 @@ export {
   updateAccountDetail,
   updateAvatar,
   coverImageUpdate,
-  userChannelProfile,
   getWatchHistory,
-  SendLoggedUserData
+  SendLoggedUserData,
 };

@@ -2,7 +2,6 @@ import express from "express"
 import cors from "cors"
 import cookieParser from "cookie-parser"
 
-
 const app = express()
 
 app.use(cors({
@@ -10,8 +9,8 @@ app.use(cors({
     credentials: true
 }))
 
-app.use(express.json({limit: "16kb"}))
-app.use(express.urlencoded({extended: true, limit: "16kb"}))
+app.use(express.json({ limit: "16kb" }))
+app.use(express.urlencoded({ extended: true, limit: "16kb" }))
 app.use(express.static("public"))
 app.use(cookieParser())
 
@@ -20,14 +19,12 @@ import userRouter from "./routes/userRouter.js"
 import videoRouter from "./routes/videoRouter.js"
 import commentRouter from "./routes/commentRouter.js"
 import LikeRouter from "./routes/likeRoute.js";
-import dashboardRouter from "./routes/dashboardRouter.js"
 import healthcheckRouter from "./routes/healthcheckRouter.js"
 
-app.use("/api/v1/user" , userRouter)
-app.use("/api/v1/videos" ,videoRouter)
+app.use("/api/v1/user", userRouter)
+app.use("/api/v1/videos", videoRouter)
 app.use("/api/v1/comment", commentRouter);
-app.use("/api/v1/like", LikeRouter );
-app.use("/api/v1/dashboard", dashboardRouter);
+app.use("/api/v1/like", LikeRouter);
 app.use("/api/v1/healthCheck", healthcheckRouter)
 
 

@@ -35,9 +35,37 @@ const userSchema = new Schema(
         watchHistory: [
             {
                 type: Schema.Types.ObjectId,
-                ref: "Video"
+                ref: "Remedy"
             }
-        ],
+        ], 
+        ph_no : {
+            type: String,
+            required: true,
+          },
+          
+          bio: {
+            type: String,
+          },
+          location: {
+            type: String,
+          },
+          preferredLanguage: {
+            type: String,
+          },
+          isprofessional: {
+            type: Boolean,
+            default: false,
+          },
+          isAdmin: {
+            type: Boolean,
+            default: false,
+          },
+          RMP_NO: {
+            type: String,
+          },
+          RMP_img: {
+            type: String,
+          },
         password: {
             type: String,
             required: [true, 'Password is required']

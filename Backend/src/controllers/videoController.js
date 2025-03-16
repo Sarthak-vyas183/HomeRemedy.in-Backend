@@ -6,6 +6,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { LikeModel } from "../models/likeModel.js";
+import Comment from "../models/commentModel.js";
 
 const getAllVideos = asyncHandler(async (req, res) => {
   try {
@@ -224,6 +225,42 @@ const getLikedCountOnComment = asyncHandler(async (req, res) => {
   }
 });
 
+const getVideoComments = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+
+  const comments = await Comment.aggregate([
+    {
+      $match: {
+        productId: new mongoose.Types.ObjectId(videoId),
+        onModel: { $in: ["Video", "Remedy"] },
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owner",
+      },
+    },
+    {
+      $unwind: "$owner",
+    },
+    {
+      $project: {
+        content: 1,
+        createdAt: 1,
+        owner: {
+          _id: 1,
+          username: 1,
+          avatar: 1,
+        },
+      },
+    },
+  ]);
+
+  res.status(200).json(comments);
+});
 
 export {
   getAllVideos,
@@ -234,4 +271,5 @@ export {
   togglePublishStatus,
   getLikedCountOnVideo,
   getLikedCountOnComment,
+  getVideoComments,
 };
