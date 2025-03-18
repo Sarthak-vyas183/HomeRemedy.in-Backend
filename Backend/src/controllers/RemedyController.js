@@ -23,9 +23,7 @@ const createRemedy = asyncHandler(async (req, res) => {
     try {
         const { title, description, ingredients, steps, ailments, effectiveness, EcommerceUrl } = req.body;
         const userId = req.user?._id;
-        if (
-            [title, description]
-                .some((field) => field?.trim() === "")) {
+        if ([title, description].some((field) => field?.trim() === "")) {
             throw new ApiError(400, "All fields are required");
         }
 
@@ -33,6 +31,8 @@ const createRemedy = asyncHandler(async (req, res) => {
         if (!user) {
             throw new ApiError(404, "User not found");
         }
+
+        const isVerified = user.isprofessional ? true : false;
 
         const remedy = await remedyModel.create({
             userId,
@@ -42,7 +42,8 @@ const createRemedy = asyncHandler(async (req, res) => {
             steps,
             ailments,
             effectiveness,
-            EcommerceUrl
+            EcommerceUrl,
+            isVerified
         });
         if (!remedy) {
             throw new ApiError(400, "Failed to create remedy");
