@@ -132,5 +132,4 @@ const get_Vr_RemedyById = asyncHandler(async (req, res) => {
     }
 });
 
-
 export { get_Vr_Remedies, createRemedy, updateRemedy, deleteRemedy, get_Vr_RemedyById };
