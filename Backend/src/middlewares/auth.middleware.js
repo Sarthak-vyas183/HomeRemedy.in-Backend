@@ -3,7 +3,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import jwt from "jsonwebtoken";
 import { userModel } from "../models/userModel.js";
 
- const verifyJWT = asyncHandler(async (req, res, next) => {
+const verifyJWT = asyncHandler(async (req, res, next) => {
   try {
     const token =
       req.cookies?.accessToken ||
@@ -34,8 +34,8 @@ const verifyAdmin = asyncHandler(async (req, res, next) => {
 });
 
 const isprofessional = asyncHandler(async (req, res, next) => {
-  if (req.user?.isProfesional !== "true") {
-    throw new ApiError(403, "You are not authorized to access this route");
+  if (!req.user?.isprofessional) {
+    throw new ApiError(403, "You are not authorized to access this professional route");
   }
   next();
 });

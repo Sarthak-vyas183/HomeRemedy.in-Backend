@@ -33,13 +33,31 @@ const remedySchema = new mongoose.Schema({
         max: 5,
         default: 3
     },
-    EcommerceUrl : {
-      type : String,
-      default : "https://www.amazon.in/"
+    EcommerceUrl: {
+        type: String,
+        default: "https://www.amazon.in/"
     },
     isVerified: {
         type: Boolean,
         default: false // Admin or doctor verification
+    },
+    approvedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    },
+    verifyInfo: {
+        status: {
+            type: String,
+            default: "pending" // pending, approved, rejected
+        },
+        reason: {
+            type: String,
+            default: "We will let you know soon..."
+        },
+        date: {
+            type: Date,
+            default: Date.now
+        }
     },
     createdAt: {
         type: Date,
