@@ -1,6 +1,7 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/Apierror.js";
 import { userModel } from "../models/userModel.js";
+import { P_Req_model } from "../models/Become.professional.Model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
@@ -112,15 +113,9 @@ const registerUser = asyncHandler(async (req, res) => {
         "Registration success"
       )
     );
-});
+}); 
 
 const loginUser = asyncHandler(async (req, res) => {
-  // req body -> data
-  // username or email
-  //find the user
-  //password check
-  //access and referesh token
-  //send cookie
 
   const { email, username, password } = req.body;
 
@@ -452,6 +447,50 @@ const SendLoggedUserData = asyncHandler(async (req, res) => {
   }
 });
 
+const becomeProfessional = asyncHandler(async (req, res) => {
+  try {
+    const userId = req.user?._id;
+    const user = await userModel.findById(userId);
+    console.log(user)
+    if (!user) {
+      throw new ApiError(404, "User not found");
+    }
+
+    if (user.isprofessional) {
+      throw new ApiError(400, "User is already a professional");
+    }
+
+    const { RMP_NO, message } = req.body;
+    const RMP_ImgLocalPath = req.file?.path;
+
+    if (!RMP_ImgLocalPath) {
+      throw new ApiError(400, "RMP_Img file required");
+    }
+
+    const RMP_Img = await uploadOnCloudinary(RMP_ImgLocalPath);
+    if (!RMP_Img) {
+      throw new ApiError(409, "Error while uploading RMP_Img on cloudinary");
+    }
+
+    const request = await P_Req_model.create({
+      userId,
+      RMP_NO,
+      RMP_Img: RMP_Img.url,
+      message,
+    });
+
+    if (!request) {
+      throw new ApiError(500, "Something went wrong while registering user");
+    }
+
+    res.status(201).json(new ApiResponse(201, request, "Request sent"));
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ msg: "Internal server error", err: error });
+  }
+});
+
+
 export {
   registerUser,
   loginUser,
@@ -464,4 +503,5 @@ export {
   coverImageUpdate,
   getWatchHistory,
   SendLoggedUserData,
+  becomeProfessional,
 };

@@ -11,7 +11,8 @@ import {
   updateAvatar,
   coverImageUpdate,
   getWatchHistory,
-  SendLoggedUserData
+  SendLoggedUserData,
+  becomeProfessional
 } from "../controllers/userController.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
@@ -47,5 +48,6 @@ router
   .patch(verifyJWT, upload.single("coverImage"), coverImageUpdate);
 router.route("/getWatchHistory").post(verifyJWT, getWatchHistory);
 router.route("/verifyUserToken").post(verifyJWT, SendLoggedUserData);
+router.route("/becomeProfessional").post(verifyJWT, upload.single("RMP_Img"), becomeProfessional);
 
 export default router;

@@ -19,11 +19,10 @@ const verifyRemedy = asyncHandler(async (req, res) => {
             throw new ApiError(404, "Remedy not found");
         }
 
-        if (remedy.isVerified || remedy.verifyInfo.status === "rejected" ) {
+        if (remedy.isVerified === true || remedy.verifyInfo.status === "rejected" && remedy.approvedBy.toString() != userId.toString()) {
             throw new ApiError(400, "Remedy already verified");
         }
-         
-        
+
         if (!user) {
             throw new ApiError(404, "User not found");
         }
@@ -63,15 +62,16 @@ const rejectRemedy = asyncHandler(async (req, res) => {
             throw new ApiError(404, "Remedy not found");
         }
 
-        if (remedy.isVerified ) {
-            throw res.status(400).json({ msg: "you can't reject a Approved remedy", statusCode: 400 });
-        }
-
         if (!user) {
             throw new ApiError(404, "User not found");
         }
         if (!user.isprofessional) {
             throw new ApiError(403, "Unauthorized: Only professionals can reject remedies");
+        }
+
+        if (remedy.isVerified === true && remedy.approvedBy.toString() != user._id.toString()) {
+            console.log(remedy.approvedBy.toString(), user._id.toString());
+            throw new ApiError(400, "you can't reject a approved remedy");
         }
 
         remedy.isVerified = false;

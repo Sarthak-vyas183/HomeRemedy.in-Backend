@@ -27,7 +27,7 @@ const verifyJWT = asyncHandler(async (req, res, next) => {
 });
 
 const verifyAdmin = asyncHandler(async (req, res, next) => {
-  if (req.user?.isAdmin !== "true") {
+  if (!req.user?.isAdmin) {
     throw new ApiError(403, "You are not authorized to access this route");
   }
   next();
